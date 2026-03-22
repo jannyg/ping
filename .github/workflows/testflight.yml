@@ -43,7 +43,7 @@ jobs:
 
       - name: Import distribution certificate
         run: |
-          echo "$DISTRIBUTION_CERTIFICATE_P12" | base64 --decode -o certificate.p12
+          echo "$DISTRIBUTION_CERTIFICATE_P12" | base64 -d -o certificate.p12
           security import certificate.p12 \
             -k build.keychain \
             -P "$DISTRIBUTION_CERTIFICATE_PASSWORD" \
@@ -61,7 +61,7 @@ jobs:
       - name: Install provisioning profile
         run: |
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-          echo "$PROVISIONING_PROFILE" | base64 --decode \
+          echo "$PROVISIONING_PROFILE" | base64 -d \
             -o ~/Library/MobileDevice/Provisioning\ Profiles/PingMonitor_AppStore.provisionprofile
         env:
           PROVISIONING_PROFILE: ${{ secrets.PROVISIONING_PROFILE }}
