@@ -43,9 +43,7 @@ jobs:
 
       - name: Import distribution certificate
         run: |
-          printf '%s' "$DISTRIBUTION_CERTIFICATE_P12" > /tmp/cert_b64.txt
-          base64 -D -i /tmp/cert_b64.txt -o certificate.p12
-          rm /tmp/cert_b64.txt
+          python3 -c "import base64,os; open('certificate.p12','wb').write(base64.b64decode(os.environ['DISTRIBUTION_CERTIFICATE_P12']))"
           security import certificate.p12 \
             -k build.keychain \
             -P "$DISTRIBUTION_CERTIFICATE_PASSWORD" \
@@ -63,9 +61,7 @@ jobs:
       - name: Install provisioning profile
         run: |
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-          printf '%s' "$PROVISIONING_PROFILE" > /tmp/profile_b64.txt
-          base64 -D -i /tmp/profile_b64.txt -o /tmp/PingMonitor.provisionprofile
-          rm /tmp/profile_b64.txt
+          python3 -c "import base64,os; open('/tmp/PingMonitor.provisionprofile','wb').write(base64.b64decode(os.environ['PROVISIONING_PROFILE']))"
           UUID=$(security cms -D -i /tmp/PingMonitor.provisionprofile | \
             /usr/libexec/PlistBuddy -c 'Print :UUID' /dev/stdin)
           PROFILE_NAME=$(security cms -D -i /tmp/PingMonitor.provisionprofile | \
