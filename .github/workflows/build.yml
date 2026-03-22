@@ -1,4 +1,4 @@
-name: Build iOS App
+name: Build macOS App
 
 on:
   push:
@@ -11,22 +11,26 @@ jobs:
     runs-on: macos-latest
 
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-    - name: Select Xcode
-      run: sudo xcode-select -s /Applications/Xcode.app
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app
 
-    - name: Build
-      run: |
-        xcodebuild clean build -project PingMonitor.xcodeproj \
-          -scheme PingMonitor \
-          -destination 'platform=macOS' \
-          CODE_SIGN_IDENTITY="" \
-          CODE_SIGNING_REQUIRED=NO \
-          CODE_SIGNING_ALLOWED=NO
+      - name: Build (unsigned)
+        run: |
+          xcodebuild clean build \
+            -project PingMonitor.xcodeproj \
+            -scheme PingMonitor \
+            -configuration Release \
+            -destination 'platform=macOS' \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            BUILD_DIR="$PWD/build"
 
-    - name: Upload artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: PingMonitor.app
-        path: build/Release/PingMonitor.app
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PingMonitor-${{ github.sha }}
+          path: build/Release/PingMonitor.app
+          retention-days: 7

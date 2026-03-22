@@ -1,0 +1,122 @@
+name: Deploy to TestFlight
+
+# Runs automatically on push to main, or manually from Actions tab.
+#
+# Required GitHub Secrets:
+#   DISTRIBUTION_CERTIFICATE_P12      - Base64-encoded .p12 distribution certificate
+#                                       Generate: base64 -i cert.p12 | pbcopy
+#   DISTRIBUTION_CERTIFICATE_PASSWORD - Password for the .p12 file
+#   PROVISIONING_PROFILE              - Base64-encoded Mac App Store .provisionprofile
+#                                       Generate: base64 -i profile.provisionprofile | pbcopy
+#   KEYCHAIN_PASSWORD                 - Any random password (used for the temporary keychain)
+#   APP_STORE_CONNECT_API_KEY_ID      - Key ID from App Store Connect (e.g. ABC123DEF4)
+#   APP_STORE_CONNECT_API_KEY_ISSUER  - Issuer ID (UUID) from App Store Connect
+#   APP_STORE_CONNECT_API_KEY         - Contents of the .p8 private key file
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app
+
+      # ── Code signing setup ──────────────────────────────────────────────────
+
+      - name: Create temporary keychain
+        run: |
+          security create-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
+          security set-keychain-settings -lut 21600 build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
+        env:
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+
+      - name: Import distribution certificate
+        run: |
+          echo "$DISTRIBUTION_CERTIFICATE_P12" | base64 --decode -o certificate.p12
+          security import certificate.p12 \
+            -k build.keychain \
+            -P "$DISTRIBUTION_CERTIFICATE_PASSWORD" \
+            -T /usr/bin/codesign \
+            -T /usr/bin/productbuild
+          security set-key-partition-list \
+            -S apple-tool:,apple: \
+            -s -k "$KEYCHAIN_PASSWORD" build.keychain
+          rm certificate.p12
+        env:
+          DISTRIBUTION_CERTIFICATE_P12: ${{ secrets.DISTRIBUTION_CERTIFICATE_P12 }}
+          DISTRIBUTION_CERTIFICATE_PASSWORD: ${{ secrets.DISTRIBUTION_CERTIFICATE_PASSWORD }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+
+      - name: Install provisioning profile
+        run: |
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          echo "$PROVISIONING_PROFILE" | base64 --decode \
+            -o ~/Library/MobileDevice/Provisioning\ Profiles/PingMonitor_AppStore.provisionprofile
+        env:
+          PROVISIONING_PROFILE: ${{ secrets.PROVISIONING_PROFILE }}
+
+      # ── App Store Connect API key ────────────────────────────────────────────
+
+      - name: Install App Store Connect API key
+        run: |
+          mkdir -p ~/.appstoreconnect/private_keys
+          echo "$APP_STORE_CONNECT_API_KEY" \
+            > ~/.appstoreconnect/private_keys/AuthKey_${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}.p8
+        env:
+          APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
+
+      # ── Build & archive ──────────────────────────────────────────────────────
+
+      - name: Archive
+        run: |
+          xcodebuild clean archive \
+            -project PingMonitor.xcodeproj \
+            -scheme PingMonitor \
+            -configuration Release \
+            -destination 'generic/platform=macOS' \
+            -archivePath "$PWD/build/PingMonitor.xcarchive" \
+            CODE_SIGN_STYLE=Manual \
+            PROVISIONING_PROFILE_SPECIFIER="PingMonitor App Store" \
+            DEVELOPMENT_TEAM=LCSMC3CU5X
+
+      - name: Export archive
+        run: |
+          xcodebuild -exportArchive \
+            -archivePath "$PWD/build/PingMonitor.xcarchive" \
+            -exportPath "$PWD/build/export" \
+            -exportOptionsPlist ".github/ExportOptions.plist" \
+            -authenticationKeyID "$APP_STORE_CONNECT_API_KEY_ID" \
+            -authenticationKeyIssuerID "$APP_STORE_CONNECT_API_KEY_ISSUER" \
+            -authenticationKeyPath ~/.appstoreconnect/private_keys/AuthKey_${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}.p8 \
+            -allowProvisioningUpdates
+        env:
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          APP_STORE_CONNECT_API_KEY_ISSUER: ${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER }}
+
+      # ── Upload to TestFlight ─────────────────────────────────────────────────
+
+      - name: Upload to TestFlight
+        run: |
+          xcrun altool --upload-app \
+            --type macos \
+            --file "$(find $PWD/build/export -name '*.pkg' | head -1)" \
+            --apiKey "$APP_STORE_CONNECT_API_KEY_ID" \
+            --apiIssuer "$APP_STORE_CONNECT_API_KEY_ISSUER"
+        env:
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          APP_STORE_CONNECT_API_KEY_ISSUER: ${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER }}
+
+      # ── Cleanup ──────────────────────────────────────────────────────────────
+
+      - name: Delete temporary keychain
+        if: always()
+        run: security delete-keychain build.keychain || true

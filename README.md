@@ -1,6 +1,6 @@
-# PingMonitor
+# Packet Inter-Network Groper
 
-A powerful iOS application designed to monitor and track network stability in real-time. Perfect for users who need to keep tabs on their network connectivity, especially in scenarios with potentially unstable connections such as:
+An iOS application designed to monitor and track network stability in real-time. Perfect for users who need to keep tabs on their network connectivity, especially in scenarios with potentially unstable connections such as:
 - Commuting on trains or buses
 - Working with public WiFi
 - Moving between different network zones
@@ -8,13 +8,13 @@ A powerful iOS application designed to monitor and track network stability in re
 
 ## Overview
 
-PingMonitor runs in your menu bar and continuously monitors your network connection by pinging specified hosts or IPs. It provides instant visual feedback and detailed statistics about your network stability, helping you understand and track connectivity issues.
+Packet Inter-Network Groper runs in your menu bar and continuously monitors your network connection by pinging specified hosts or IPs. It provides instant visual feedback and detailed statistics about your network stability, helping you understand and track connectivity issues.
 
 ## Features
 
-- [ ] Real-time network monitoring through regular ping checks to specified hosts/IPs
-- [ ] Visual status indicator in menu bar (green/yellow/red) for instant connection health feedback
-- [ ] Detailed statistics and metrics in a convenient popup window
+- [x] Real-time network monitoring through regular ping checks to specified hosts/IPs
+- [x] Visual status indicator in menu bar (green/yellow/red) for instant connection health feedback
+- [x] Detailed statistics and metrics in a convenient popup window
 - [ ] Customizable alerts and notifications:
   - System notifications for connection status changes
   - Audio alerts for critical events

@@ -12,8 +12,14 @@ struct PingMonitorApp: App {
                 Image(systemName: statusIcon)
                     .symbolRenderingMode(.monochrome)
                 if pingManager.status != .idle {
-                    Text("\(Int(pingManager.lastPingTime))")
-                        .font(.system(size: 10))
+                    if pingManager.lastPingTime < 0 {
+                        Text("!")
+                            .font(.system(size: 10))
+                            .foregroundColor(.red)
+                    } else {
+                        Text(pingTimeDisplay)
+                            .font(.system(size: 10))
+                    }
                 }
             }
         }
@@ -30,6 +36,16 @@ struct PingMonitorApp: App {
             return "xmark.circle"
         case .idle:
             return "circle"
+        }
+    }
+
+    private var pingTimeDisplay: String {
+        if pingManager.lastPingTime < 0 {
+            return "!"
+        } else if pingManager.lastPingTime == 0 {
+            return "-"
+        } else {
+            return "\(Int(pingManager.lastPingTime))"
         }
     }
 }

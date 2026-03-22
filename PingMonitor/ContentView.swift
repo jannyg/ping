@@ -7,7 +7,7 @@ struct ContentView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("Ping Monitor")
+                Text("Packet Inter-Network Groper")
                     .font(.headline)
                 Spacer()
                 Button(action: { showingSettings.toggle() }) {
@@ -20,7 +20,7 @@ struct ContentView: View {
             Group {
                 StatusRow(title: "Status", value: statusText)
                 StatusRow(title: "Host", value: pingManager.host)
-                StatusRow(title: "Last Ping", value: "\(Int(pingManager.lastPingTime))ms")
+                StatusRow(title: "Last Ping", value: pingManager.lastPingTime < 0 ? "Failed" : "\(Int(pingManager.lastPingTime))ms")
                 StatusRow(title: "Average", value: "\(Int(pingManager.averagePingTime))ms")
                 StatusRow(title: "Packet Loss", value: String(format: "%.1f%%", pingManager.packetLoss))
             }
@@ -52,10 +52,16 @@ struct ContentView: View {
 
             Divider()
 
-            Button("Quit") {
-                NSApplication.shared.terminate(nil)
+            HStack {
+                Button("Reset Stats") {
+                    pingManager.resetStats()
+                }
+                Spacer()
+                Button("Quit") {
+                    NSApplication.shared.terminate(nil)
+                }
             }
-            .frame(maxWidth: .infinity, alignment: .center)
+            .frame(maxWidth: .infinity)
         }
         .padding()
         .frame(width: 250)

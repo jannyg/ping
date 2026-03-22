@@ -4,7 +4,11 @@
 <dict>
     <key>LSUIElement</key>
     <true/>
+    <key>LSBackgroundOnly</key>
+    <true/>
     <key>NSNetworkingUsageDescription</key>
-    <string>PingMonitor needs network access to ping hosts and monitor network connectivity.</string>
+    <string>Packet InterNet Groper needs network access to ping hosts and monitor network connectivity.</string>
+    <key>ITSAppUsesNonExemptEncryption</key>
+    <string>NO</string>
 </dict>
 </plist>

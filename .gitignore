@@ -1,0 +1,26 @@
+# ── Xcode ────────────────────────────────────────────────────────────────────
+DerivedData/
+build/
+*.xcarchive
+*.xcuserstate
+xcuserdata/
+*.moved-aside
+*.pbxproj.backup
+
+# ── macOS ─────────────────────────────────────────────────────────────────────
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# ── Code signing & certificates ───────────────────────────────────────────────
+*.p12
+*.p8
+*.cer
+*.mobileprovision
+*.provisionprofile
+
+# ── IDE / tool workspaces ─────────────────────────────────────────────────────
+.cursor/
+.claude/
+.idea/
+*.swp
