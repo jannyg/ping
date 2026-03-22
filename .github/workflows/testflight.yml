@@ -97,6 +97,7 @@ jobs:
             -destination 'generic/platform=macOS' \
             -archivePath "$PWD/build/PingMonitor.xcarchive" \
             CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY="Apple Distribution" \
             "PROVISIONING_PROFILE_SPECIFIER=$PROFILE_NAME" \
             DEVELOPMENT_TEAM=LCSMC3CU5X
 
