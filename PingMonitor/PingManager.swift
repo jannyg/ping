@@ -6,6 +6,18 @@ enum PingStatus {
     case idle, good, warning, error
 }
 
+struct HostnameValidator {
+    static func isValid(_ host: String) -> Bool {
+        guard !host.isEmpty, host.count <= 253 else { return false }
+        let ipv4 = /^((25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)\.){3}(25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)$/
+        let ipv6 = /^\[?([0-9a-fA-F]{0,4}:){2,7}[0-9a-fA-F]{0,4}\]?$/
+        let fqdn = /^(?:[a-zA-Z0-9](?:[a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)*[a-zA-Z0-9](?:[a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?$/
+        return (try? ipv4.firstMatch(in: host)) != nil
+            || (try? ipv6.firstMatch(in: host)) != nil
+            || (try? fqdn.firstMatch(in: host)) != nil
+    }
+}
+
 class PingManager: ObservableObject {
     @Published var status: PingStatus = .idle
     @Published var lastPingTime: TimeInterval = 0
@@ -39,6 +51,11 @@ class PingManager: ObservableObject {
 
     @Published var pingInterval: TimeInterval {
         didSet {
+            let clamped = max(1.0, min(3600.0, pingInterval))
+            if pingInterval != clamped {
+                pingInterval = clamped
+                return
+            }
             if pingInterval != oldValue {
                 UserDefaults.standard.set(pingInterval, forKey: "pingInterval")
                 restartPinging()
@@ -54,16 +71,17 @@ class PingManager: ObservableObject {
     private var wakeObserver: NSObjectProtocol?
 
     init() {
-        // Load saved settings or use defaults
-        self.host = UserDefaults.standard.string(forKey: "pingHost") ?? "8.8.8.8"
-        self.pingInterval = UserDefaults.standard.double(forKey: "pingInterval")
-        self.warningThreshold = UserDefaults.standard.double(forKey: "warningThreshold")
-        self.errorThreshold = UserDefaults.standard.double(forKey: "errorThreshold")
+        let savedHost = UserDefaults.standard.string(forKey: "pingHost") ?? "8.8.8.8"
+        self.host = HostnameValidator.isValid(savedHost) ? savedHost : "8.8.8.8"
 
-        // Set defaults if not previously set
-        if self.pingInterval == 0 { self.pingInterval = 5 }
-        if self.warningThreshold == 0 { self.warningThreshold = 100 }
-        if self.errorThreshold == 0 { self.errorThreshold = 200 }
+        let savedInterval = UserDefaults.standard.double(forKey: "pingInterval")
+        self.pingInterval = savedInterval == 0 ? 5 : max(1.0, min(3600.0, savedInterval))
+
+        let savedWarning = UserDefaults.standard.double(forKey: "warningThreshold")
+        self.warningThreshold = savedWarning == 0 ? 100 : max(1.0, min(30000.0, savedWarning))
+
+        let savedError = UserDefaults.standard.double(forKey: "errorThreshold")
+        self.errorThreshold = savedError == 0 ? 200 : max(1.0, min(30000.0, savedError))
 
         requestNotificationPermission()
         restartPinging()
