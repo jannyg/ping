@@ -1,9 +1,11 @@
 import SwiftUI
+import ServiceManagement
 
 struct ContentView: View {
     @ObservedObject var pingManager: PingManager
     @State private var showingSettings = false
     @State private var hostFieldText: String = ""
+    @State private var launchAtLogin: Bool = (SMAppService.mainApp.status == .enabled)
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -64,6 +66,15 @@ struct ContentView: View {
                         set: { pingManager.pingInterval = Double($0) ?? 5 }
                     ))
                     .suffix(text: "sec")
+
+                    Toggle("Launch at Login", isOn: $launchAtLogin)
+                        .onChange(of: launchAtLogin) { enabled in
+                            if enabled {
+                                try? SMAppService.mainApp.register()
+                            } else {
+                                try? SMAppService.mainApp.unregister()
+                            }
+                        }
                 }
             }
 
