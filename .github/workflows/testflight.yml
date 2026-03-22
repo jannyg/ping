@@ -112,6 +112,9 @@ jobs:
             "PROVISIONING_PROFILE_SPECIFIER=$PROFILE_NAME" \
             DEVELOPMENT_TEAM=LCSMC3CU5X
 
+      - name: List imported certificates
+        run: security find-identity -v -p codesigning build.keychain
+
       - name: Generate ExportOptions.plist
         run: |
           cat > /tmp/ExportOptions.plist <<EOF
