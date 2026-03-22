@@ -6,6 +6,18 @@ enum PingStatus {
     case idle, good, warning, error
 }
 
+struct HostnameValidator {
+    static func isValid(_ host: String) -> Bool {
+        guard !host.isEmpty, host.count <= 253 else { return false }
+        let ipv4 = /^((25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)\.){3}(25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)$/
+        let ipv6 = /^(\[)?((([0-9a-fA-F]{1,4}:){7}([0-9a-fA-F]{1,4}|:))|(([0-9a-fA-F]{1,4}:){6}(:[0-9a-fA-F]{1,4}|((25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)){3})|:))|(([0-9a-fA-F]{1,4}:){5}(((:[0-9a-fA-F]{1,4}){1,2})|:((25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)){3})|:))|(([0-9a-fA-F]{1,4}:){4}(((:[0-9a-fA-F]{1,4}){1,3})|((:[0-9a-fA-F]{1,4})?:((25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)){3}))|:))|(([0-9a-fA-F]{1,4}:){3}(((:[0-9a-fA-F]{1,4}){1,4})|((:[0-9a-fA-F]{1,4}){0,2}:((25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)){3}))|:))|(([0-9a-fA-F]{1,4}:){2}(((:[0-9a-fA-F]{1,4}){1,5})|((:[0-9a-fA-F]{1,4}){0,3}:((25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)){3}))|:))|(([0-9a-fA-F]{1,4}:){1}(((:[0-9a-fA-F]{1,4}){1,6})|((:[0-9a-fA-F]{1,4}){0,4}:((25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)){3}))|:))|(:(((:[0-9a-fA-F]{1,4}){1,7})|((:[0-9a-fA-F]{1,4}){0,5}:((25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)){3}))|:)))(\])?$/
+        let fqdn = /^(?:[a-zA-Z0-9](?:[a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)*[a-zA-Z0-9](?:[a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.?$/
+        return (try? ipv4.firstMatch(in: host)) != nil
+            || (try? ipv6.firstMatch(in: host)) != nil
+            || (try? fqdn.firstMatch(in: host)) != nil
+    }
+}
+
 class PingManager: ObservableObject {
     @Published var status: PingStatus = .idle
     @Published var lastPingTime: TimeInterval = 0
@@ -39,6 +51,12 @@ class PingManager: ObservableObject {
 
     @Published var pingInterval: TimeInterval {
         didSet {
+            // Clamp to valid range. Re-assigning here re-fires didSet once more,
+            // but the guard below will pass on that second call, so no recursion.
+            guard pingInterval >= 1.0, pingInterval <= 3600.0 else {
+                pingInterval = max(1.0, min(3600.0, pingInterval))
+                return
+            }
             if pingInterval != oldValue {
                 persistence.set(pingInterval, forKey: "pingInterval")
                 restartPinging()
@@ -66,14 +84,17 @@ class PingManager: ObservableObject {
         self.notifications = notifications
         self.persistence = persistence
 
-        self.host = persistence.string(forKey: "pingHost") ?? "8.8.8.8"
-        self.pingInterval = persistence.double(forKey: "pingInterval")
-        self.warningThreshold = persistence.double(forKey: "warningThreshold")
-        self.errorThreshold = persistence.double(forKey: "errorThreshold")
+        let savedHost = persistence.string(forKey: "pingHost") ?? "8.8.8.8"
+        self.host = HostnameValidator.isValid(savedHost) ? savedHost : "8.8.8.8"
 
-        if self.pingInterval == 0 { self.pingInterval = 5 }
-        if self.warningThreshold == 0 { self.warningThreshold = 100 }
-        if self.errorThreshold == 0 { self.errorThreshold = 200 }
+        let savedInterval = persistence.double(forKey: "pingInterval")
+        self.pingInterval = savedInterval == 0 ? 5 : max(1.0, min(3600.0, savedInterval))
+
+        let savedWarning = persistence.double(forKey: "warningThreshold")
+        self.warningThreshold = savedWarning == 0 ? 100 : max(1.0, min(30000.0, savedWarning))
+
+        let savedError = persistence.double(forKey: "errorThreshold")
+        self.errorThreshold = savedError == 0 ? 200 : max(1.0, min(30000.0, savedError))
 
         requestNotificationPermission()
         restartPinging()

@@ -3,6 +3,7 @@ import SwiftUI
 struct ContentView: View {
     @ObservedObject var pingManager: PingManager
     @State private var showingSettings = false
+    @State private var hostFieldText: String = ""
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -29,7 +30,23 @@ struct ContentView: View {
                 Divider()
 
                 Group {
-                    SettingsRow(title: "Host", text: $pingManager.host)
+                    HStack {
+                        Text("Host")
+                            .foregroundColor(.secondary)
+                        TextField("", text: $hostFieldText)
+                            .textFieldStyle(.roundedBorder)
+                            .frame(width: 80)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 5)
+                                    .stroke(HostnameValidator.isValid(hostFieldText) ? Color.clear : Color.red, lineWidth: 1.5)
+                            )
+                            .onAppear { hostFieldText = pingManager.host }
+                            .onChange(of: hostFieldText) { newValue in
+                                if HostnameValidator.isValid(newValue) {
+                                    pingManager.host = newValue
+                                }
+                            }
+                    }
                     SettingsRow(title: "Warning at", text: Binding(
                         get: { String(Int(pingManager.warningThreshold)) },
                         set: { pingManager.warningThreshold = Double($0) ?? 100 }
