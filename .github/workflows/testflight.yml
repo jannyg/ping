@@ -112,15 +112,6 @@ jobs:
             "PROVISIONING_PROFILE_SPECIFIER=$PROFILE_NAME" \
             DEVELOPMENT_TEAM=LCSMC3CU5X
 
-      - name: List imported certificates
-        run: |
-          echo "=== Codesigning identities ==="
-          security find-identity -v -p codesigning build.keychain
-          echo "=== All identities ==="
-          security find-identity -v build.keychain
-          echo "=== Find installer cert ==="
-          security find-certificate -a -c "Mac Installer" build.keychain || echo "Not found"
-
       - name: Generate ExportOptions.plist
         run: |
           cat > /tmp/ExportOptions.plist <<EOF
@@ -159,19 +150,6 @@ jobs:
             -authenticationKeyIssuerID "$APP_STORE_CONNECT_API_KEY_ISSUER" \
             -authenticationKeyPath ~/.appstoreconnect/private_keys/AuthKey_${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}.p8 \
             -allowProvisioningUpdates
-        env:
-          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
-          APP_STORE_CONNECT_API_KEY_ISSUER: ${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER }}
-
-      # ── Upload to TestFlight ─────────────────────────────────────────────────
-
-      - name: Upload to TestFlight
-        run: |
-          xcrun altool --upload-app \
-            --type macos \
-            --file "$(find $PWD/build/export -name '*.pkg' | head -1)" \
-            --apiKey "$APP_STORE_CONNECT_API_KEY_ID" \
-            --apiIssuer "$APP_STORE_CONNECT_API_KEY_ISSUER"
         env:
           APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
           APP_STORE_CONNECT_API_KEY_ISSUER: ${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER }}
