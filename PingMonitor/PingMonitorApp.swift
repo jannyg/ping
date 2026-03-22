@@ -1,8 +1,15 @@
 import SwiftUI
+import ServiceManagement
 
 @main
 struct PingMonitorApp: App {
     @StateObject private var pingManager = PingManager()
+
+    init() {
+        // Register as a login item on first launch so the menu bar icon
+        // persists across reboots. Silently ignores if already registered.
+        try? SMAppService.mainApp.register()
+    }
 
     var body: some Scene {
         MenuBarExtra {
