@@ -61,14 +61,7 @@ jobs:
       - name: Install provisioning profile
         run: |
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-          python3 -c "
-import base64, os
-data = os.environ.get('PROVISIONING_PROFILE', '')
-print(f'Secret length: {len(data)} chars')
-decoded = base64.b64decode(data)
-print(f'Decoded: {len(decoded)} bytes')
-open('/tmp/PingMonitor.provisionprofile', 'wb').write(decoded)
-"
+          python3 -c "import base64,os; data=os.environ.get('PROVISIONING_PROFILE',''); print('Secret length:',len(data)); decoded=base64.b64decode(data); print('Decoded bytes:',len(decoded)); open('/tmp/PingMonitor.provisionprofile','wb').write(decoded)"
           UUID=$(security cms -D -i /tmp/PingMonitor.provisionprofile | \
             /usr/libexec/PlistBuddy -c 'Print :UUID' /dev/stdin)
           PROFILE_NAME=$(security cms -D -i /tmp/PingMonitor.provisionprofile | \
