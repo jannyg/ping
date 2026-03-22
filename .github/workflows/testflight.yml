@@ -72,7 +72,7 @@ jobs:
       - name: Install provisioning profile
         run: |
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-          python3 -c "import base64,os; data=os.environ.get('PROVISIONING_PROFILE',''); print('Secret length:',len(data)); decoded=base64.b64decode(data); print('Decoded bytes:',len(decoded)); open('/tmp/PingMonitor.provisionprofile','wb').write(decoded)"
+          python3 -c "import base64,os; open('/tmp/PingMonitor.provisionprofile','wb').write(base64.b64decode(os.environ['PROVISIONING_PROFILE']))"
           openssl smime -inform der -verify -noverify \
             -in /tmp/PingMonitor.provisionprofile \
             -out /tmp/profile.plist 2>/dev/null
