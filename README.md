@@ -1,48 +1,36 @@
 # Packet Inter-Network Groper
 
-An iOS application designed to monitor and track network stability in real-time. Perfect for users who need to keep tabs on their network connectivity, especially in scenarios with potentially unstable connections such as:
-- Commuting on trains or buses
-- Working with public WiFi
-- Moving between different network zones
-- Troubleshooting intermittent connection issues
+![Build](https://github.com/jannyg/ping/actions/workflows/build.yml/badge.svg)
 
-## Overview
-
-Packet Inter-Network Groper runs in your menu bar and continuously monitors your network connection by pinging specified hosts or IPs. It provides instant visual feedback and detailed statistics about your network stability, helping you understand and track connectivity issues.
+A macOS menu bar app that continuously monitors network connectivity by pinging a specified host. Instant visual feedback and live statistics — always visible in your menu bar.
 
 ## Features
 
-- [x] Real-time network monitoring through regular ping checks to specified hosts/IPs
-- [x] Visual status indicator in menu bar (green/yellow/red) for instant connection health feedback
-- [x] Detailed statistics and metrics in a convenient popup window
-- [ ] Customizable alerts and notifications:
-  - System notifications for connection status changes
-  - Audio alerts for critical events
-  - Status updates in system tray
-  - Integration with notification center
-- [ ] Historical data tracking to identify patterns in network stability
-- [ ] Configurable thresholds for warning and critical states
-
-## Use Cases
-
-- **Commuter's Network Monitor**: Track connection stability while traveling on trains, buses, or moving between WiFi networks
-- **Remote Work Reliability**: Monitor connection quality when working from various locations
-- **Network Troubleshooting**: Identify patterns in network instability and gather data for IT support
-- **Public WiFi Assessment**: Evaluate the reliability of public WiFi networks before committing to important tasks
-
-## Getting Started
-
-[Coming Soon]
+- Real-time latency monitoring with configurable ping interval
+- Visual status indicator in the menu bar (green / yellow / red)
+- Live statistics: current ping, rolling average, and packet loss
+- Configurable warning and error thresholds
+- System notifications on high latency or ping failures
+- Handles sleep/wake cycles gracefully — no stale stats after waking up
 
 ## Requirements
 
-- macOS [version requirements TBD]
-- Network connectivity
+- macOS 13.0 (Ventura) or later
 
-## Contributing
+## Getting Started
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+1. Clone the repo and open `PingMonitor.xcodeproj` in Xcode
+2. Select the `PingMonitor` scheme and run (`⌘R`)
+3. The app appears in your menu bar — click the icon to open the stats panel
+4. Click the gear icon to configure host, thresholds, and ping interval
+
+## Use Cases
+
+- **Commuting**: track connection stability on trains or buses
+- **Remote work**: monitor quality when working from cafés or co-working spaces
+- **Troubleshooting**: gather latency and packet loss data to share with IT support
+- **Public WiFi**: assess reliability before starting important calls or transfers
 
 ## License
 
-[License information to be added]
+MIT
