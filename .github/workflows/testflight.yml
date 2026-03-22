@@ -3,9 +3,11 @@ name: Deploy to TestFlight
 # Runs automatically on push to main, or manually from Actions tab.
 #
 # Required GitHub Secrets:
-#   DISTRIBUTION_CERTIFICATE_P12      - Base64-encoded .p12 distribution certificate
+#   DISTRIBUTION_CERTIFICATE_P12      - Base64-encoded Apple Distribution .p12 certificate
 #                                       Generate: base64 -i cert.p12 | pbcopy
-#   DISTRIBUTION_CERTIFICATE_PASSWORD - Password for the .p12 file
+#   DISTRIBUTION_CERTIFICATE_PASSWORD - Password for the Apple Distribution .p12 file
+#   INSTALLER_CERTIFICATE_P12         - Base64-encoded Mac Installer Distribution .p12 certificate
+#   INSTALLER_CERTIFICATE_PASSWORD    - Password for the Mac Installer Distribution .p12 file
 #   PROVISIONING_PROFILE              - Base64-encoded Mac App Store .provisionprofile
 #                                       Generate: base64 -i profile.provisionprofile | pbcopy
 #   KEYCHAIN_PASSWORD                 - Any random password (used for the temporary keychain)
@@ -49,13 +51,22 @@ jobs:
             -P "$DISTRIBUTION_CERTIFICATE_PASSWORD" \
             -T /usr/bin/codesign \
             -T /usr/bin/productbuild
+          rm certificate.p12
+          python3 -c "import base64,os; open('installer.p12','wb').write(base64.b64decode(os.environ['INSTALLER_CERTIFICATE_P12']))"
+          security import installer.p12 \
+            -k build.keychain \
+            -P "$INSTALLER_CERTIFICATE_PASSWORD" \
+            -T /usr/bin/codesign \
+            -T /usr/bin/productbuild
           security set-key-partition-list \
             -S apple-tool:,apple: \
             -s -k "$KEYCHAIN_PASSWORD" build.keychain
-          rm certificate.p12
+          rm installer.p12
         env:
           DISTRIBUTION_CERTIFICATE_P12: ${{ secrets.DISTRIBUTION_CERTIFICATE_P12 }}
           DISTRIBUTION_CERTIFICATE_PASSWORD: ${{ secrets.DISTRIBUTION_CERTIFICATE_PASSWORD }}
+          INSTALLER_CERTIFICATE_P12: ${{ secrets.INSTALLER_CERTIFICATE_P12 }}
+          INSTALLER_CERTIFICATE_PASSWORD: ${{ secrets.INSTALLER_CERTIFICATE_PASSWORD }}
           KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
 
       - name: Install provisioning profile
