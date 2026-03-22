@@ -62,10 +62,11 @@ jobs:
         run: |
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
           python3 -c "import base64,os; data=os.environ.get('PROVISIONING_PROFILE',''); print('Secret length:',len(data)); decoded=base64.b64decode(data); print('Decoded bytes:',len(decoded)); open('/tmp/PingMonitor.provisionprofile','wb').write(decoded)"
-          UUID=$(security cms -D -i /tmp/PingMonitor.provisionprofile | \
-            /usr/libexec/PlistBuddy -c 'Print :UUID' /dev/stdin)
-          PROFILE_NAME=$(security cms -D -i /tmp/PingMonitor.provisionprofile | \
-            /usr/libexec/PlistBuddy -c 'Print :Name' /dev/stdin)
+          openssl smime -inform der -verify -noverify \
+            -in /tmp/PingMonitor.provisionprofile \
+            -out /tmp/profile.plist 2>/dev/null
+          UUID=$(/usr/libexec/PlistBuddy -c 'Print :UUID' /tmp/profile.plist)
+          PROFILE_NAME=$(/usr/libexec/PlistBuddy -c 'Print :Name' /tmp/profile.plist)
           echo "Profile name: $PROFILE_NAME"
           echo "Profile UUID: $UUID"
           cp /tmp/PingMonitor.provisionprofile \
