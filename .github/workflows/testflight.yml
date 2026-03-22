@@ -112,12 +112,40 @@ jobs:
             "PROVISIONING_PROFILE_SPECIFIER=$PROFILE_NAME" \
             DEVELOPMENT_TEAM=LCSMC3CU5X
 
+      - name: Generate ExportOptions.plist
+        run: |
+          cat > /tmp/ExportOptions.plist <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>method</key>
+              <string>app-store-connect</string>
+              <key>teamID</key>
+              <string>LCSMC3CU5X</string>
+              <key>destination</key>
+              <string>upload</string>
+              <key>signingStyle</key>
+              <string>manual</string>
+              <key>signingCertificate</key>
+              <string>Apple Distribution</string>
+              <key>installerSigningCertificate</key>
+              <string>Mac Installer Distribution</string>
+              <key>provisioningProfiles</key>
+              <dict>
+                  <key>dev.jannyg.pingmonitor</key>
+                  <string>${PROFILE_NAME}</string>
+              </dict>
+          </dict>
+          </plist>
+          EOF
+
       - name: Export archive
         run: |
           xcodebuild -exportArchive \
             -archivePath "$PWD/build/PingMonitor.xcarchive" \
             -exportPath "$PWD/build/export" \
-            -exportOptionsPlist ".github/ExportOptions.plist" \
+            -exportOptionsPlist "/tmp/ExportOptions.plist" \
             -authenticationKeyID "$APP_STORE_CONNECT_API_KEY_ID" \
             -authenticationKeyIssuerID "$APP_STORE_CONNECT_API_KEY_ISSUER" \
             -authenticationKeyPath ~/.appstoreconnect/private_keys/AuthKey_${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}.p8 \
