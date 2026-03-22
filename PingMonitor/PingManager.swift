@@ -15,7 +15,7 @@ class PingManager: ObservableObject {
     @Published var host: String {
         didSet {
             if host != oldValue {
-                UserDefaults.standard.set(host, forKey: "pingHost")
+                persistence.set(host, forKey: "pingHost")
                 restartPinging()
             }
         }
@@ -24,7 +24,7 @@ class PingManager: ObservableObject {
     @Published var warningThreshold: Double {
         didSet {
             if warningThreshold != oldValue {
-                UserDefaults.standard.set(warningThreshold, forKey: "warningThreshold")
+                persistence.set(warningThreshold, forKey: "warningThreshold")
             }
         }
     }
@@ -32,7 +32,7 @@ class PingManager: ObservableObject {
     @Published var errorThreshold: Double {
         didSet {
             if errorThreshold != oldValue {
-                UserDefaults.standard.set(errorThreshold, forKey: "errorThreshold")
+                persistence.set(errorThreshold, forKey: "errorThreshold")
             }
         }
     }
@@ -40,27 +40,37 @@ class PingManager: ObservableObject {
     @Published var pingInterval: TimeInterval {
         didSet {
             if pingInterval != oldValue {
-                UserDefaults.standard.set(pingInterval, forKey: "pingInterval")
+                persistence.set(pingInterval, forKey: "pingInterval")
                 restartPinging()
             }
         }
     }
 
     private var timer: Timer?
-    private var currentPing: SimplePing?
+    private var currentPing: PingExecutorProtocol?
     private var totalPings: Int = 0
     private var failedPings: Int = 0
     private var sleepObserver: NSObjectProtocol?
     private var wakeObserver: NSObjectProtocol?
 
-    init() {
-        // Load saved settings or use defaults
-        self.host = UserDefaults.standard.string(forKey: "pingHost") ?? "8.8.8.8"
-        self.pingInterval = UserDefaults.standard.double(forKey: "pingInterval")
-        self.warningThreshold = UserDefaults.standard.double(forKey: "warningThreshold")
-        self.errorThreshold = UserDefaults.standard.double(forKey: "errorThreshold")
+    private let pingExecutorFactory: PingExecutorFactory
+    private let notifications: NotificationServiceProtocol
+    private let persistence: PersistenceProtocol
 
-        // Set defaults if not previously set
+    init(
+        pingExecutorFactory: @escaping PingExecutorFactory = { SimplePing(hostName: $0) },
+        notifications: NotificationServiceProtocol = UNUserNotificationCenter.current(),
+        persistence: PersistenceProtocol = UserDefaults.standard
+    ) {
+        self.pingExecutorFactory = pingExecutorFactory
+        self.notifications = notifications
+        self.persistence = persistence
+
+        self.host = persistence.string(forKey: "pingHost") ?? "8.8.8.8"
+        self.pingInterval = persistence.double(forKey: "pingInterval")
+        self.warningThreshold = persistence.double(forKey: "warningThreshold")
+        self.errorThreshold = persistence.double(forKey: "errorThreshold")
+
         if self.pingInterval == 0 { self.pingInterval = 5 }
         if self.warningThreshold == 0 { self.warningThreshold = 100 }
         if self.errorThreshold == 0 { self.errorThreshold = 200 }
@@ -115,7 +125,7 @@ class PingManager: ObservableObject {
 
     private func pingHost() {
         currentPing?.stop()
-        let ping = SimplePing(hostName: host)
+        let ping = pingExecutorFactory(host)
         ping.delegate = self
         currentPing = ping
         ping.start()
@@ -134,7 +144,7 @@ class PingManager: ObservableObject {
     }
 
     private func requestNotificationPermission() {
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { granted, error in
+        notifications.requestAuthorization(options: [.alert, .sound]) { granted, error in
             if granted {
                 print("Notification permission granted")
             } else if let error = error {
@@ -150,7 +160,7 @@ class PingManager: ObservableObject {
         content.sound = .default
 
         let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
-        UNUserNotificationCenter.current().add(request)
+        notifications.add(request, withCompletionHandler: nil)
     }
 
     private func updateStatus(pingTime: TimeInterval) {
