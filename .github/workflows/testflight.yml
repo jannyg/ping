@@ -22,6 +22,10 @@ on:
     - cron: '0 2 * * 1'  # Every Monday at 02:00 UTC
   workflow_dispatch:
 
+concurrency:
+  group: deploy-main
+  cancel-in-progress: false
+
 jobs:
   deploy:
     runs-on: macos-latest
