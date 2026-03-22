@@ -11,6 +11,7 @@
 		8A1234561234567800000003 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A1234561234567800000004 /* ContentView.swift */; };
 		8A1234561234567800000005 /* PingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A1234561234567800000006 /* PingManager.swift */; };
 		8A1234561234567800000007 /* SimplePing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A1234561234567800000008 /* SimplePing.swift */; };
+		8A1234561234567800000030 /* PingServiceProtocols.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A1234561234567800000031 /* PingServiceProtocols.swift */; };
 		8A123456123456780000022 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8A1234561234567800000021 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
@@ -19,6 +20,7 @@
 		8A1234561234567800000004 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		8A1234561234567800000006 /* PingManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PingManager.swift; sourceTree = "<group>"; };
 		8A1234561234567800000008 /* SimplePing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimplePing.swift; sourceTree = "<group>"; };
+		8A1234561234567800000031 /* PingServiceProtocols.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PingServiceProtocols.swift; sourceTree = "<group>"; };
 		8A1234561234567800000009 /* PingMonitor.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PingMonitor.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		8A1234561234567800000020 /* PingMonitor.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PingMonitor.entitlements; sourceTree = "<group>"; };
 		8A1234561234567800000021 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -51,6 +53,7 @@
 				8A1234561234567800000004 /* ContentView.swift */,
 				8A1234561234567800000006 /* PingManager.swift */,
 				8A1234561234567800000008 /* SimplePing.swift */,
+				8A1234561234567800000031 /* PingServiceProtocols.swift */,
 				8A1234561234567800000021 /* Assets.xcassets */,
 			);
 			path = PingMonitor;
@@ -137,6 +140,7 @@
 				8A1234561234567800000001 /* PingMonitorApp.swift in Sources */,
 				8A1234561234567800000005 /* PingManager.swift in Sources */,
 				8A1234561234567800000007 /* SimplePing.swift in Sources */,
+				8A1234561234567800000030 /* PingServiceProtocols.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
