@@ -11,7 +11,7 @@
     <key>signingStyle</key>
     <string>manual</string>
     <key>signingCertificate</key>
-    <string>3rd Party Mac Developer Application</string>
+    <string>Apple Distribution</string>
     <key>provisioningProfiles</key>
     <dict>
         <key>dev.jannyg.pingmonitor</key>
