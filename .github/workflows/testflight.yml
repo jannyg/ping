@@ -113,7 +113,13 @@ jobs:
             DEVELOPMENT_TEAM=LCSMC3CU5X
 
       - name: List imported certificates
-        run: security find-identity -v -p codesigning build.keychain
+        run: |
+          echo "=== Codesigning identities ==="
+          security find-identity -v -p codesigning build.keychain
+          echo "=== All identities ==="
+          security find-identity -v build.keychain
+          echo "=== Find installer cert ==="
+          security find-certificate -a -c "Mac Installer" build.keychain || echo "Not found"
 
       - name: Generate ExportOptions.plist
         run: |
