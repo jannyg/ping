@@ -52,6 +52,7 @@ class PingManager: ObservableObject {
     private var failedPings: Int = 0
     private var sleepObserver: NSObjectProtocol?
     private var wakeObserver: NSObjectProtocol?
+    private var previousStatus: PingStatus = .idle
 
     init() {
         // Load saved settings or use defaults
@@ -65,7 +66,10 @@ class PingManager: ObservableObject {
         if self.warningThreshold == 0 { self.warningThreshold = 100 }
         if self.errorThreshold == 0 { self.errorThreshold = 200 }
 
-        requestNotificationPermission()
+        if !UserDefaults.standard.bool(forKey: "hasRequestedNotificationPermission") {
+            requestNotificationPermission()
+            UserDefaults.standard.set(true, forKey: "hasRequestedNotificationPermission")
+        }
         restartPinging()
         registerSleepWakeObservers()
     }
@@ -125,11 +129,15 @@ class PingManager: ObservableObject {
         DispatchQueue.main.async {
             self.failedPings += 1
             self.totalPings += 1
-            self.status = .error
-            self.lastPingTime = -1  // Set to -1 to indicate failure
+            self.lastPingTime = -1
             self.packetLoss = Double(self.failedPings) / Double(self.totalPings) * 100
 
-            self.sendNotification(title: "Ping Failed", body: error.localizedDescription)
+            let newStatus = PingStatus.error
+            if self.previousStatus != newStatus {
+                self.sendNotification(title: "Ping Failed", body: error.localizedDescription)
+            }
+            self.status = newStatus
+            self.previousStatus = newStatus
         }
     }
 
@@ -157,14 +165,24 @@ class PingManager: ObservableObject {
         lastPingTime = pingTime
         totalPings += 1
 
+        let newStatus: PingStatus
         if pingTime >= errorThreshold {
-            status = .error
-            sendNotification(title: "High Latency", body: "Ping time: \(Int(pingTime))ms")
+            newStatus = .error
         } else if pingTime >= warningThreshold {
-            status = .warning
+            newStatus = .warning
         } else {
-            status = .good
+            newStatus = .good
         }
+
+        if newStatus != previousStatus {
+            if newStatus == .error {
+                sendNotification(title: "High Latency", body: "Ping time: \(Int(pingTime))ms")
+            } else if newStatus == .warning && previousStatus != .error {
+                sendNotification(title: "Elevated Latency", body: "Ping time: \(Int(pingTime))ms")
+            }
+        }
+        status = newStatus
+        previousStatus = newStatus
 
         packetLoss = Double(failedPings) / Double(totalPings) * 100
         averagePingTime = (averagePingTime * Double(totalPings - 1) + pingTime) / Double(totalPings)
@@ -178,6 +196,7 @@ class PingManager: ObservableObject {
             self.averagePingTime = 0
             self.packetLoss = 0
             self.status = .idle
+            self.previousStatus = .idle
         }
     }
 }
