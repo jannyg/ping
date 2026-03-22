@@ -15,7 +15,7 @@
     <key>provisioningProfiles</key>
     <dict>
         <key>dev.jannyg.pingmonitor</key>
-        <string>PingMonitor App Store</string>
+        <string>Packet Inter-Network Groper</string>
     </dict>
 </dict>
 </plist>

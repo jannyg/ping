@@ -62,7 +62,17 @@ jobs:
         run: |
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
           echo "$PROVISIONING_PROFILE" | base64 -d \
-            -o ~/Library/MobileDevice/Provisioning\ Profiles/PingMonitor_AppStore.provisionprofile
+            -o /tmp/PingMonitor.provisionprofile
+          UUID=$(security cms -D -i /tmp/PingMonitor.provisionprofile | \
+            /usr/libexec/PlistBuddy -c 'Print :UUID' /dev/stdin)
+          PROFILE_NAME=$(security cms -D -i /tmp/PingMonitor.provisionprofile | \
+            /usr/libexec/PlistBuddy -c 'Print :Name' /dev/stdin)
+          echo "Profile name: $PROFILE_NAME"
+          echo "Profile UUID: $UUID"
+          cp /tmp/PingMonitor.provisionprofile \
+            ~/Library/MobileDevice/Provisioning\ Profiles/$UUID.provisionprofile
+          echo "PROFILE_UUID=$UUID" >> $GITHUB_ENV
+          echo "PROFILE_NAME=$PROFILE_NAME" >> $GITHUB_ENV
         env:
           PROVISIONING_PROFILE: ${{ secrets.PROVISIONING_PROFILE }}
 
@@ -87,7 +97,7 @@ jobs:
             -destination 'generic/platform=macOS' \
             -archivePath "$PWD/build/PingMonitor.xcarchive" \
             CODE_SIGN_STYLE=Manual \
-            PROVISIONING_PROFILE_SPECIFIER="PingMonitor App Store" \
+            "PROVISIONING_PROFILE_SPECIFIER=$PROFILE_NAME" \
             DEVELOPMENT_TEAM=LCSMC3CU5X
 
       - name: Export archive
