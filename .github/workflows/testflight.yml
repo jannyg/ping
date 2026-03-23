@@ -19,7 +19,7 @@ on:
   push:
     branches: [ main ]
   schedule:
-    - cron: '0 2 * * 1'  # Every Monday at 02:00 UTC
+    - cron: '0 2 1 */2 *'  # 1st of every other month at 02:00 UTC (keep build alive within 90-day TestFlight expiry)
   workflow_dispatch:
 
 concurrency:
