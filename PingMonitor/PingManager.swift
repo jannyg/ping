@@ -27,7 +27,10 @@ class PingManager: ObservableObject {
     @Published var host: String {
         didSet {
             if host != oldValue {
-                persistence.set(host, forKey: "pingHost")
+                let value = host
+                DispatchQueue.global(qos: .background).async { [weak self] in
+                    self?.persistence.set(value, forKey: "pingHost")
+                }
                 restartPinging()
             }
         }
@@ -36,7 +39,10 @@ class PingManager: ObservableObject {
     @Published var warningThreshold: Double {
         didSet {
             if warningThreshold != oldValue {
-                persistence.set(warningThreshold, forKey: "warningThreshold")
+                let value = warningThreshold
+                DispatchQueue.global(qos: .background).async { [weak self] in
+                    self?.persistence.set(value, forKey: "warningThreshold")
+                }
             }
         }
     }
@@ -44,7 +50,10 @@ class PingManager: ObservableObject {
     @Published var errorThreshold: Double {
         didSet {
             if errorThreshold != oldValue {
-                persistence.set(errorThreshold, forKey: "errorThreshold")
+                let value = errorThreshold
+                DispatchQueue.global(qos: .background).async { [weak self] in
+                    self?.persistence.set(value, forKey: "errorThreshold")
+                }
             }
         }
     }
@@ -58,13 +67,17 @@ class PingManager: ObservableObject {
                 return
             }
             if pingInterval != oldValue {
-                persistence.set(pingInterval, forKey: "pingInterval")
+                let value = pingInterval
+                DispatchQueue.global(qos: .background).async { [weak self] in
+                    self?.persistence.set(value, forKey: "pingInterval")
+                }
                 restartPinging()
             }
         }
     }
 
-    private var timer: Timer?
+    private let timerQueue = DispatchQueue(label: "dev.jannyg.pingmonitor.timer", qos: .utility)
+    private var timer: DispatchSourceTimer?
     private var currentPing: PingExecutorProtocol?
     private var totalPings: Int = 0
     private var failedPings: Int = 0
@@ -121,7 +134,7 @@ class PingManager: ObservableObject {
     }
 
     private func handleSleep() {
-        timer?.invalidate()
+        timer?.cancel()
         timer = nil
         currentPing?.stop()
         currentPing = nil
@@ -136,16 +149,20 @@ class PingManager: ObservableObject {
     }
 
     private func restartPinging() {
-        timer?.invalidate()
+        timer?.cancel()
         startPinging()
     }
 
     func startPinging() {
-        timer?.invalidate()
-        timer = Timer.scheduledTimer(withTimeInterval: pingInterval, repeats: true) { [weak self] _ in
-            self?.pingHost()
+        timer?.cancel()
+        let t = DispatchSource.makeTimerSource(queue: timerQueue)
+        // Fire immediately, then repeat. pingHost() must run on main (accesses @Published state).
+        t.schedule(deadline: .now(), repeating: pingInterval)
+        t.setEventHandler { [weak self] in
+            DispatchQueue.main.async { self?.pingHost() }
         }
-        pingHost() // Start first ping immediately
+        t.resume()
+        timer = t
     }
 
     private func pingHost() {
@@ -157,19 +174,18 @@ class PingManager: ObservableObject {
     }
 
     private func handlePingFailure(error: Error) {
-        DispatchQueue.main.async {
-            self.failedPings += 1
-            self.totalPings += 1
-            self.lastPingTime = -1
-            self.packetLoss = Double(self.failedPings) / Double(self.totalPings) * 100
+        // SimplePing delivers delegate callbacks on the main thread — no dispatch needed.
+        failedPings += 1
+        totalPings += 1
+        lastPingTime = -1
+        packetLoss = Double(failedPings) / Double(totalPings) * 100
 
-            let newStatus = PingStatus.error
-            if self.previousStatus != newStatus {
-                self.sendNotification(title: "Ping Failed", body: error.localizedDescription)
-            }
-            self.status = newStatus
-            self.previousStatus = newStatus
+        let newStatus = PingStatus.error
+        if previousStatus != newStatus {
+            sendNotification(title: "Ping Failed", body: error.localizedDescription)
         }
+        status = newStatus
+        previousStatus = newStatus
     }
 
     private func requestNotificationPermission() {
@@ -233,10 +249,9 @@ class PingManager: ObservableObject {
 }
 
 extension PingManager: SimplePingDelegate {
+    // SimplePing delivers all delegate callbacks on the main thread.
     func simplePing(_ pinger: SimplePing, didReceiveReplyWithTime time: TimeInterval) {
-        DispatchQueue.main.async {
-            self.updateStatus(pingTime: time)
-        }
+        updateStatus(pingTime: time)
     }
 
     func simplePing(_ pinger: SimplePing, didFailWithError error: Error) {

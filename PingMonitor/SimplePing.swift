@@ -53,6 +53,8 @@ class SimplePing {
         logger.debug("Starting ping to host: \(self.hostName)")
         #endif
 
+        // All delegate callbacks are dispatched to the main thread below.
+
         DispatchQueue.global().asyncAfter(deadline: .now() + timeout) { [weak self] in
             guard let self = self else { return }
             if self.process.isRunning {
